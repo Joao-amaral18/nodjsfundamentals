@@ -1,4 +1,4 @@
-const { res } = require('express')
+const { res, response } = require('express')
 const express = require('express')
 const { v4: idv4 } = require('uuid')
 const app = express()
@@ -24,13 +24,14 @@ function verifyIfCpfExists(req, res, next) {
 
 
 function getBalance(statement) {
-    const balance = statement.reduce((acc, operation) => {
-        if (operation.type === 'credit') {
-            return acc + operation.amount;
-        } else if (operation.type === 'debit') {
-            return acc - operation.amount;
-        }
-    }, 0)
+    const balance = statement.reduce(
+        (acc, operation) => {
+            if (operation.type === 'credit') {
+                return acc + operation.amount;
+            } else if (operation.type === 'debit') {
+                return acc - operation.amount;
+            }
+        }, 0)
 
     return balance
 }
@@ -108,10 +109,44 @@ app.get('/statement/date', verifyIfCpfExists, (req, res) => {
 
     const statement = customer.statement.filter(
         (statement) =>
-            statement.created_at.toString() ==
+            statement.created_at.toString() ===
             new Date(dateFormat).toString()
     )
     console.log(statement)
     return res.json(statement)
+})
+
+app.put("/account", verifyIfCpfExists, (req, res) => {
+    const { customer } = req;
+    const { name } = req.body;
+
+    customer.name = name
+
+    return res.status(201).send()
+})
+
+app.get("/account", verifyIfCpfExists, (req, res) => {
+
+    const { customer } = req;
+
+
+    return res.json(customer)
+})
+
+app.delete("/account", verifyIfCpfExists, (req, res) => {
+    const { customer } = req;
+
+    customers.splice(customer, 1);
+
+    return res.status(200).json(customer)
+})
+
+app.get("/balance", verifyIfCpfExists, (req, res) => {
+    const { customer } = req;
+
+    const balance = getBalance(customer.balance)
+
+    return res.json(balance)
+
 })
 app.listen(3333)
